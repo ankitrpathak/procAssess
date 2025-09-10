@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Setup Test - Interview Proctor</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+      .info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+      code {
+        background: #f8f9fa;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 Interview Proctor Setup Test</h1>
+
+    <div class="test-section">
+      <h2>1. Protocol Check</h2>
+      <div id="protocol-status" class="status info">Checking...</div>
+      <p>
+        Camera access requires HTTPS or localhost. Current protocol:
+        <code id="current-protocol"></code>
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h2>2. Browser Compatibility</h2>
+      <div id="browser-status" class="status info">Checking...</div>
+      <p>Required features: getUserMedia, MediaRecorder, TensorFlow.js</p>
+    </div>
+
+    <div class="test-section">
+      <h2>3. Camera Access Test</h2>
+      <div id="camera-status" class="status info">
+        Click "Test Camera" to check camera access
+      </div>
+      <button id="test-camera-btn" onclick="testCamera()">Test Camera</button>
+      <video
+        id="test-video"
+        style="width: 100%; max-width: 400px; display: none"
+        autoplay
+        muted
+      ></video>
+    </div>
+
+    <div class="test-section">
+      <h2>4. AI Models Test</h2>
+      <div id="models-status" class="status info">
+        Click "Test Models" to check AI model loading
+      </div>
+      <button id="test-models-btn" onclick="testModels()">Test Models</button>
+    </div>
+
+    <div class="test-section">
+      <h2>5. Quick Setup Commands</h2>
+      <div class="status info">
+        <strong
+          >For local testing, run one of these commands in your project
+          folder:</strong
+        >
+        <br /><br />
+        <code>python -m http.server 8000</code> (Python 3)<br />
+        <code>python -m SimpleHTTPServer 8000</code> (Python 2)<br />
+        <code>npx serve .</code> (Node.js)<br />
+        <code>php -S localhost:8000</code> (PHP)<br />
+        <br />
+        Then open: <code>http://localhost:8000</code>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>6. Next Steps</h2>
+      <div id="next-steps" class="status info">
+        <ol>
+          <li>Ensure you're running on HTTPS or localhost</li>
+          <li>Test camera access and allow permissions</li>
+          <li>Verify AI models can load</li>
+          <li>
+            Open the main application: <a href="index.html">index.html</a>
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <script>
+      // Load TensorFlow.js for testing
+      const script = document.createElement("script");
+      script.src =
+        "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0/dist/tf.min.js";
+      document.head.appendChild(script);
+
+      // Protocol check
+      function checkProtocol() {
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const protocolStatus = document.getElementById("protocol-status");
+        const currentProtocol = document.getElementById("current-protocol");
+
+        currentProtocol.textContent = protocol + "//" + hostname;
+
+        if (
+          protocol === "https:" ||
+          hostname === "localhost" ||
+          hostname === "127.0.0.1"
+        ) {
+          protocolStatus.className = "status success";
+          protocolStatus.textContent =
+            "✅ Protocol is compatible with camera access";
+        } else {
+          protocolStatus.className = "status error";
+          protocolStatus.textContent =
+            "❌ Protocol not compatible. Camera access requires HTTPS or localhost";
+        }
+      }
+
+      // Browser compatibility check
+      function checkBrowser() {
+        const browserStatus = document.getElementById("browser-status");
+        const features = {
+          getUserMedia: !!(
+            navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+          ),
+          MediaRecorder: !!window.MediaRecorder,
+          WebGL: !!document.createElement("canvas").getContext("webgl"),
+          ES6: !!window.Promise && !!window.Array.from,
+        };
+
+        const missing = Object.entries(features).filter(
+          ([name, supported]) => !supported
+        );
+
+        if (missing.length === 0) {
+          browserStatus.className = "status success";
+          browserStatus.textContent =
+            "✅ All required browser features are supported";
+        } else {
+          browserStatus.className = "status error";
+          browserStatus.textContent = `❌ Missing features: ${missing
+            .map(([name]) => name)
+            .join(", ")}`;
+        }
+      }
+
+      // Camera test
+      async function testCamera() {
+        const cameraStatus = document.getElementById("camera-status");
+        const testVideo = document.getElementById("test-video");
+        const testBtn = document.getElementById("test-camera-btn");
+
+        testBtn.disabled = true;
+        cameraStatus.className = "status info";
+        cameraStatus.textContent = "Requesting camera access...";
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 640, height: 480 },
+            audio: false,
+          });
+
+          testVideo.srcObject = stream;
+          testVideo.style.display = "block";
+
+          cameraStatus.className = "status success";
+          cameraStatus.textContent = "✅ Camera access successful!";
+
+          // Stop the stream after 5 seconds
+          setTimeout(() => {
+            stream.getTracks().forEach((track) => track.stop());
+            testVideo.style.display = "none";
+          }, 5000);
+        } catch (error) {
+          cameraStatus.className = "status error";
+          cameraStatus.textContent = `❌ Camera access failed: ${error.message}`;
+        }
+
+        testBtn.disabled = false;
+      }
+
+      // Models test
+      async function testModels() {
+        const modelsStatus = document.getElementById("models-status");
+        const testBtn = document.getElementById("test-models-btn");
+
+        testBtn.disabled = true;
+        modelsStatus.className = "status info";
+        modelsStatus.textContent = "Loading AI models...";
+
+        try {
+          // Wait for TensorFlow.js to load
+          await new Promise((resolve) => {
+            if (window.tf) resolve();
+            else script.onload = resolve;
+          });
+
+          // Test loading COCO-SSD
+          const cocoScript = document.createElement("script");
+          cocoScript.src =
+            "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3";
+          document.head.appendChild(cocoScript);
+
+          await new Promise((resolve) => (cocoScript.onload = resolve));
+
+          const model = await cocoSsd.load();
+
+          modelsStatus.className = "status success";
+          modelsStatus.textContent = "✅ AI models loaded successfully!";
+        } catch (error) {
+          modelsStatus.className = "status error";
+          modelsStatus.textContent = `❌ Model loading failed: ${error.message}`;
+        }
+
+        testBtn.disabled = false;
+      }
+
+      // Run initial checks
+      checkProtocol();
+      checkBrowser();
+    </script>
+  </body>
+</html>

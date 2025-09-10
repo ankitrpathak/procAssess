@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Interview Proctor",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8000",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Start Local Server (Python 3)"
+    },
+    {
+      "name": "Launch Test Setup",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:8000/test-setup.html",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Start Local Server (Python 3)"
+    }
+  ]
+}

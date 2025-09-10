@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Video Proctoring - Interview</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- TensorFlow.js and models -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@1.0.2"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Interview Proctor</h1>
+    </header>
+    <main class="layout">
+      <section class="video-area">
+        <div id="httpsNotice" class="notice" style="display: none">
+          <strong>⚠️ HTTPS Required:</strong> Camera access requires HTTPS.
+          <br />For local testing, use:
+          <code>python -m http.server 8000</code> or <code>npx serve .</code>
+        </div>
+        <div class="video-wrapper">
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="overlay"></canvas>
+          <div id="statusBar" class="status-bar">
+            <span id="focusStatus">Ready to start</span>
+            <span id="timer">00:00</span>
+          </div>
+        </div>
+        <div class="controls">
+          <button id="startBtn">Start Interview</button>
+          <button id="stopBtn" disabled>Stop & Save</button>
+          <button id="downloadCsvBtn" disabled>Download Report (CSV)</button>
+          <button id="downloadVideoBtn" disabled>Download Video (WebM)</button>
+        </div>
+        <div class="summary" id="summary"></div>
+      </section>
+      <section class="logs">
+        <h2>Event Log</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Type</th>
+              <th>Detail</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </section>
+    </main>
+    <footer class="app-footer">
+      <span>Focus & Object Detection in Video Interviews</span>
+    </footer>
+    <script src="app.js"></script>
+  </body>
+</html>

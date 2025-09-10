@@ -1,0 +1,146 @@
+Tutedude SDE Internship Assignment
+Project Title: Focus & Object Detection in Video Interviews
+
+🎯 Objective
+Build a video proctoring system that:
+Detects whether a candidate is focused during an online interview.
+
+
+Flags if unauthorized items (phone, books, notes, extra devices) appear in the video.
+
+
+
+✅ Requirements
+1. Frontend (Interview Screen)
+Simple web page where the interviewer can see the candidate’s video.
+
+
+Candidate’s video should be recorded/stored.
+
+
+Real-time detection of focus & suspicious events (e.g., “User looking away”, “Phone detected”).
+
+
+2. Focus Detection Logic
+Use CV libraries (OpenCV, MediaPipe, TensorFlow.js, etc.).
+
+
+Detect if candidate is not looking at the screen for >5 sec.
+
+
+Detect if no face is present for >10 sec.
+
+
+Detect multiple faces in the frame (if possible)
+
+
+Log all events with timestamps.
+
+
+3. Item/Note Detection
+Use object detection (YOLO / TF.js) to identify:
+
+
+Mobile phone
+
+
+Books / paper notes
+
+
+Extra electronic devices
+
+
+Flag and log these events in real time.
+
+
+4. Backend (Optional but Preferred)
+Store logs in a database (MongoDB / MySQL / Firebase).
+
+
+Provide API to fetch focus + item detection reports.
+
+
+5. Reporting
+Generate a Proctoring Report with:
+
+
+Candidate Name
+
+
+Interview Duration
+
+
+Number of times focus lost
+
+
+Suspicious events (multiple faces, absence, phone/notes detected)
+
+
+Final Integrity Score = 100 – deductions
+
+
+
+
+
+
+📦 Deliverables
+GitHub Repository with README (setup instructions).
+Live deployed link.
+
+
+Demo video (2–3 mins).
+
+
+Sample Proctoring Report (PDF/CSV).
+
+
+
+📝 Evaluation Criteria
+Criteria
+Weightage
+Functionality
+35%
+Code Quality & Documentation
+20%
+UI/UX Simplicity
+15%
+Accuracy (Focus + Object Detect)
+20%
+Bonus Points
+10%
+
+
+🎁 Bonus Points
+Eye closure/drowsiness detection
+
+
+Real-time alerts for interviewer
+
+
+Audio detection (background voices)
+
+
+
+
+
+
+
+
+📌 Submission Guidelines
+Deadline: 9pm, 11th September 2025
+
+
+Submit here: https://forms.gle/6z9titKchv4TFM2i7
+
+
+GitHub repo link
+
+
+Demo video link
+Deployed link
+
+
+Sample Proctoring Report
+
+
+README must include installation & usage steps.

@@ -69,7 +69,3 @@ No build steps required; AI models are loaded via CDN.
 - Frontend interview screen: `index.html`, `styles.css`, `app.js`
 - Real-time focus and object detection, logging, CSV report
 - Optional backend not included (can be added to store logs via API)
-
-### License
-
-MIT

@@ -4,19 +4,29 @@
   const ctx = canvasEl.getContext("2d");
   const startBtn = document.getElementById("startBtn");
   const stopBtn = document.getElementById("stopBtn");
+  const pauseBtn = document.getElementById("pauseBtn");
+  const resumeBtn = document.getElementById("resumeBtn");
   const downloadCsvBtn = document.getElementById("downloadCsvBtn");
   const downloadVideoBtn = document.getElementById("downloadVideoBtn");
+  const downloadPdfBtn = document.getElementById("downloadPdfBtn");
   const logBody = document.getElementById("logBody");
   const focusStatus = document.getElementById("focusStatus");
   const timerEl = document.getElementById("timer");
   const summaryEl = document.getElementById("summary");
   const httpsNotice = document.getElementById("httpsNotice");
+  const sessionCount = document.getElementById("sessionCount");
+  const totalTime = document.getElementById("totalTime");
+  const currentScore = document.getElementById("currentScore");
 
   let mediaStream = null;
   let mediaRecorder = null;
   let recordedChunks = [];
   let startTimeMs = null;
   let timerInterval = null;
+  let isPaused = false;
+  let sessionHistory = [];
+  let totalSessionTime = 0;
+  let currentSessionId = null;
 
   // Models
   let cocoModel = null;
@@ -62,9 +72,40 @@
 
   function formatTime(ms) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));
-    const mm = String(Math.floor(totalSec / 60)).padStart(2, "0");
+    const hh = String(Math.floor(totalSec / 3600)).padStart(2, "0");
+    const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, "0");
     const ss = String(totalSec % 60).padStart(2, "0");
-    return `${mm}:${ss}`;
+    return hh > 0 ? `${hh}:${mm}:${ss}` : `${mm}:${ss}`;
+  }
+
+  function generateSessionId() {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  function updateSessionStats() {
+    sessionCount.textContent = `Sessions: ${sessionHistory.length}`;
+    totalTime.textContent = `Total Time: ${formatTime(totalSessionTime)}`;
+
+    if (events.length > 0) {
+      const durationMs = msSinceStart();
+      const lostFocusCount = events.filter(
+        (e) => e.type === "FOCUS_LOST"
+      ).length;
+      const absenceCount = events.filter((e) => e.type === "NO_FACE").length;
+      const multiCount = events.filter(
+        (e) => e.type === "MULTIPLE_FACES"
+      ).length;
+      const objectEvents = events.filter((e) => e.type === "OBJECT");
+      const deductions =
+        lostFocusCount * 2 +
+        absenceCount * 3 +
+        multiCount * 5 +
+        objectEvents.length * 2;
+      const integrity = Math.max(0, 100 - deductions);
+      currentScore.textContent = `Integrity Score: ${integrity}`;
+    } else {
+      currentScore.textContent = `Integrity Score: --`;
+    }
   }
 
   function addEvent(type, detail) {
@@ -327,15 +368,163 @@
     return [headers, ...rows].map((r) => r.join(",")).join("\n");
   }
 
+  function generateSessionSummary() {
+    const durationMs = msSinceStart();
+    const lostFocusCount = events.filter((e) => e.type === "FOCUS_LOST").length;
+    const absenceCount = events.filter((e) => e.type === "NO_FACE").length;
+    const multiCount = events.filter((e) => e.type === "MULTIPLE_FACES").length;
+    const objectEvents = events.filter((e) => e.type === "OBJECT");
+    const uniqueObjects = new Set(
+      objectEvents.map((e) => e.detail.split(":")[0])
+    );
+    const deductions =
+      lostFocusCount * 2 +
+      absenceCount * 3 +
+      multiCount * 5 +
+      objectEvents.length * 2;
+    const integrity = Math.max(0, 100 - deductions);
+
+    return {
+      duration: formatTime(durationMs),
+      lostFocusCount,
+      absenceCount,
+      multiCount,
+      objectEvents: objectEvents.length,
+      uniqueObjects: [...uniqueObjects],
+      integrity,
+      totalEvents: events.length,
+    };
+  }
+
+  function downloadReport() {
+    const name =
+      prompt("Candidate Name (optional for report):", "") || "Anonymous";
+    const summary = generateSessionSummary();
+
+    // Download CSV
+    const csv = toCsv();
+    const csvBlob = new Blob([csv], { type: "text/csv" });
+    const csvUrl = URL.createObjectURL(csvBlob);
+    const csvLink = document.createElement("a");
+    csvLink.href = csvUrl;
+    csvLink.download = `proctoring_report_${name}_${new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")}.csv`;
+    csvLink.click();
+
+    // Download PDF
+    generatePDF(name, summary);
+  }
+
+  function generatePDF(candidateName, summary) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(20);
+    doc.text("Interview Proctoring Report", 20, 20);
+
+    // Candidate info
+    doc.setFontSize(12);
+    doc.text(`Candidate: ${candidateName}`, 20, 35);
+    doc.text(`Session ID: ${currentSessionId}`, 20, 45);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 55);
+    doc.text(`Duration: ${summary.duration}`, 20, 65);
+
+    // Summary
+    doc.setFontSize(16);
+    doc.text("Summary", 20, 85);
+
+    doc.setFontSize(12);
+    doc.text(`Focus Lost: ${summary.lostFocusCount} times`, 20, 100);
+    doc.text(`No Face Detected: ${summary.absenceCount} times`, 20, 110);
+    doc.text(`Multiple Faces: ${summary.multiCount} times`, 20, 120);
+    doc.text(`Suspicious Objects: ${summary.objectEvents} detections`, 20, 130);
+    doc.text(
+      `Object Types: ${summary.uniqueObjects.join(", ") || "None"}`,
+      20,
+      140
+    );
+
+    // Integrity Score
+    doc.setFontSize(16);
+    doc.text("Integrity Score", 20, 160);
+    doc.setFontSize(24);
+    doc.setTextColor(
+      summary.integrity >= 80
+        ? [0, 128, 0]
+        : summary.integrity >= 60
+        ? [255, 165, 0]
+        : [255, 0, 0]
+    );
+    doc.text(`${summary.integrity}/100`, 20, 180);
+
+    // Events table
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Event Log", 20, 200);
+
+    let yPos = 215;
+    doc.setFontSize(10);
+    events.slice(0, 20).forEach((event, index) => {
+      if (yPos > 280) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.text(
+        `${formatTime(event.timeMs)} - ${event.type}: ${event.detail}`,
+        20,
+        yPos
+      );
+      yPos += 5;
+    });
+
+    if (events.length > 20) {
+      doc.text(`... and ${events.length - 20} more events`, 20, yPos);
+    }
+
+    // Save PDF
+    doc.save(
+      `proctoring_report_${candidateName}_${new Date()
+        .toISOString()
+        .replace(/[:.]/g, "-")}.pdf`
+    );
+  }
+
   function enableControls(on) {
     startBtn.disabled = on;
     stopBtn.disabled = !on;
+    pauseBtn.disabled = !on || isPaused;
+    resumeBtn.disabled = !on || !isPaused;
     downloadCsvBtn.disabled = !on;
+    downloadPdfBtn.disabled = !on;
+  }
+
+  function pauseProctoring() {
+    isPaused = true;
+    stopTimers();
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.pause();
+    }
+    pauseBtn.style.display = "none";
+    resumeBtn.style.display = "inline-block";
+    updateStatus("Proctoring paused");
+  }
+
+  function resumeProctoring() {
+    isPaused = false;
+    startTimers();
+    if (mediaRecorder && mediaRecorder.state === "paused") {
+      mediaRecorder.resume();
+    }
+    pauseBtn.style.display = "inline-block";
+    resumeBtn.style.display = "none";
+    updateStatus("Proctoring resumed");
   }
 
   let detectionTimer = null;
   async function detectionLoop() {
-    if (!mediaStream) return;
+    if (!mediaStream || isPaused) return;
     try {
       // Face detection
       let faces = [];
@@ -441,6 +630,7 @@
       }
 
       updateSummary();
+      updateSessionStats();
     } catch (err) {
       console.error(err);
     }
@@ -467,9 +657,14 @@
     lookingAwayActive = false;
     absenceActive = false;
     multiFaceActive = false;
+    isPaused = false;
+    events.length = 0;
     while (logBody.firstChild) logBody.removeChild(logBody.firstChild);
     focusStatus.textContent = "Ready";
     summaryEl.textContent = "";
+    pauseBtn.style.display = "inline-block";
+    resumeBtn.style.display = "none";
+    updateSessionStats();
   }
 
   // Initialize on page load
@@ -482,6 +677,7 @@
 
     try {
       resetSession();
+      currentSessionId = generateSessionId();
 
       // Check HTTPS requirement
       if (!checkHttpsRequirement()) {
@@ -499,9 +695,11 @@
       startTimers();
       enableControls(true);
       downloadCsvBtn.disabled = false;
+      downloadPdfBtn.disabled = false;
 
-      startBtn.textContent = "Start Interview";
-      updateStatus("Interview started - Detection active");
+      startBtn.textContent = "Start Proctoring";
+      updateStatus("Proctoring started - Detection active");
+      addEvent("SESSION_START", `Session ${currentSessionId} started`);
     } catch (e) {
       console.error("Initialization failed:", e);
       updateStatus("Initialization failed: " + e.message);
@@ -517,6 +715,26 @@
   });
 
   stopBtn.addEventListener("click", () => {
+    const sessionDuration = msSinceStart();
+    totalSessionTime += sessionDuration;
+
+    // Save session data
+    const sessionData = {
+      id: currentSessionId,
+      startTime: new Date(startTimeMs).toISOString(),
+      duration: sessionDuration,
+      events: [...events],
+      summary: generateSessionSummary(),
+    };
+    sessionHistory.push(sessionData);
+
+    addEvent(
+      "SESSION_END",
+      `Session ${currentSessionId} ended - Duration: ${formatTime(
+        sessionDuration
+      )}`
+    );
+
     stopTimers();
     stopRecording();
     if (mediaStream) {
@@ -526,20 +744,45 @@
     enableControls(false);
     startBtn.disabled = false;
     updateSummary();
+    updateSessionStats();
+
+    // Auto-download report
+    setTimeout(() => {
+      downloadReport();
+    }, 1000);
+  });
+
+  pauseBtn.addEventListener("click", () => {
+    pauseProctoring();
+    addEvent("SESSION_PAUSE", "Proctoring paused");
+  });
+
+  resumeBtn.addEventListener("click", () => {
+    resumeProctoring();
+    addEvent("SESSION_RESUME", "Proctoring resumed");
   });
 
   downloadCsvBtn.addEventListener("click", () => {
-    const name = prompt("Candidate Name (optional for report):", "") || "";
+    const name =
+      prompt("Candidate Name (optional for report):", "") || "Anonymous";
     if (name) addEvent("META", `Candidate: ${name}`);
     const csv = toCsv();
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     downloadCsvBtn.href = url;
-    downloadCsvBtn.download = `proctoring_report_${new Date()
+    downloadCsvBtn.download = `proctoring_report_${name}_${new Date()
       .toISOString()
       .replace(/[:.]/g, "-")}.csv`;
     // auto click for convenience
     downloadCsvBtn.click();
+  });
+
+  downloadPdfBtn.addEventListener("click", () => {
+    const name =
+      prompt("Candidate Name (optional for report):", "") || "Anonymous";
+    if (name) addEvent("META", `Candidate: ${name}`);
+    const summary = generateSessionSummary();
+    generatePDF(name, summary);
   });
 
   // Prepare anchors for downloads

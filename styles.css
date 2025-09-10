@@ -96,6 +96,18 @@ button#downloadVideoBtn {
   background: #0f2c3f;
   border-color: #1b4e6d;
 }
+button#downloadPdfBtn {
+  background: #2d1a0f;
+  border-color: #5a3a1f;
+}
+button#pauseBtn {
+  background: #3a2a0f;
+  border-color: #5a4a1f;
+}
+button#resumeBtn {
+  background: #1a3a2a;
+  border-color: #2a5a3a;
+}
 .summary {
   margin-top: 8px;
   padding: 10px;
@@ -153,4 +165,24 @@ tr:hover td {
   border-radius: 4px;
   font-family: "Courier New", monospace;
   color: #ffb366;
+}
+.session-info {
+  margin: 12px 0;
+  padding: 12px;
+  background: #0b0e18;
+  border: 1px solid #23283a;
+  border-radius: 8px;
+}
+.session-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  color: #b9c4d0;
+}
+.session-stats span {
+  padding: 4px 8px;
+  background: #172037;
+  border-radius: 4px;
+  border: 1px solid #2a3550;
 }
